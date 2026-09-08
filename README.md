@@ -1,75 +1,55 @@
-# StudyPilot AI
+# StudyPilot AI — Code Excerpt (RAG & LLM Orchestration)
 
-An AI-powered study companion built as a full-stack web app. It ingests material a student
-provides, runs it through an AI analysis pipeline, and turns the results into a personalized,
-adaptive experience across dashboards, assessments, and a study planner — with an accessibility
-layer that adapts the interface itself to how each learner works best.
+This is a **curated excerpt** from StudyPilot AI, a full-stack Gen AI academic
+copilot I built for the EUI GenAI Hackathon. The full application (50+ pages,
+auth, onboarding, accessibility engine, mock calendar integration, etc.) is
+kept in a private repository; this repo shares only the Generative AI
+engineering — the part most relevant to demonstrate for an AI-focused role —
+so it's not a runnable app on its own.
 
-> The product concept, analysis pipeline, and scoring/recommendation logic are intentionally not
-> detailed in this document.
+## What StudyPilot AI does
 
-![StudyPilot AI landing page](public/screenshot-landing.png)
+A subject-agnostic study copilot: it reads what a student uploads (lecture
+notes, past assessments), figures out what a professor emphasizes, tests the
+student on it, finds real knowledge gaps, and builds a study plan around how
+they personally learn.
+
+## What's in this excerpt
+
+**`lib/rag/`** — the retrieval-augmented generation pipeline:
+- `chunking.ts` — splits ingested material into retrievable chunks
+- `embedding-service.ts` — Gemini embeddings (`gemini-embedding-001`), batched
+- `ingestion.ts` — turns uploaded material into stored, embedded chunks
+- `retrieval.ts` — course/student-scoped semantic search: tries MongoDB Atlas
+  `$vectorSearch` first, falls back to brute-force cosine similarity if the
+  vector index isn't ready yet
+- `context-builder.ts` — assembles retrieved chunks into grounded LLM context
+- `eval/dataset.ts` — a small evaluation set used to sanity-check retrieval
+  quality, not just eyeball it
+- Matching `.test.ts` files for each module
+
+**`lib/ai/`** — the LLM orchestration layer:
+- `orchestrator.ts` — routes requests to a provider, with typed inputs/outputs
+- `providers/gemini-provider.ts`, `providers/openai-provider.ts` — swappable
+  provider implementations behind one interface
+- `prompts.ts`, `schemas.ts`, `types.ts`, `config.ts`, `modes.ts` — prompt
+  templates, structured-output schemas, and provider configuration
+
+**`lib/db.ts`** — MongoDB Atlas connection handling and vector index setup.
+
+**`lib/scheduling-engine.ts`** — a deterministic (non-LLM) study-plan
+scheduler that replans after a poor assessment result — included to show the
+non-AI algorithmic side of the app too.
+
+**`app/api/`** — three representative Next.js API routes showing how the
+above gets wired into real endpoints (`ai/analyze`, `ai/tutor`, `rag/search`).
 
 ## Tech stack
 
-- **Framework:** Next.js 16 (App Router, Turbopack) · React 19 · TypeScript
-- **Styling/UX:** Tailwind CSS v4 · Framer Motion · lucide-react
-- **Data:** MongoDB Atlas
-- **AI:** Server-side LLM integration (keys never reach the client)
-- **Auth/session:** Anonymous secure session cookies via `jose`
-- **Document processing:** PDF/DOCX/image ingestion with OCR fallback
-- **Testing:** Vitest
+Next.js · TypeScript · Gemini API · MongoDB Atlas Vector Search · Vitest
 
-## Getting started
+## Note
 
-Requires Node.js 18.18+ (Node 20 LTS recommended).
-
-```bash
-npm install
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000).
-
-Copy `.env.example` to `.env.local` and fill in the required server-only keys before using live
-AI features. Environment variables are read only by server routes and are never exposed to the
-browser. If a key is missing, the app falls back to safe, clearly-bounded demo behavior instead of
-failing.
-
-For a production build:
-
-```bash
-npm run build
-npm start
-```
-
-## Scripts
-
-| Command | Description |
-|---|---|
-| `npm run dev` | Start the local development server |
-| `npm run build` | Build for production |
-| `npm start` | Run the production build |
-| `npm run lint` | Lint the codebase |
-| `npm test` | Run the test suite |
-| `npm run seed` | Seed local/demo data |
-
-## Deployment
-
-Designed to deploy on Vercel with MongoDB Atlas as the persistence layer. Configure the required
-environment variables in your hosting provider's dashboard — never prefix provider/secret keys
-with `NEXT_PUBLIC_`, as that would expose them to the browser.
-
-## Project structure
-
-```
-app/          Next.js App Router pages and API routes
-components/   UI components, organized by feature area
-lib/          Core application logic and integrations
-scripts/      Local tooling (dev environment, seeding)
-public/       Static assets
-```
-
-## License
-
-Private project — all rights reserved.
+This repo is intentionally partial and will not run standalone (no UI, auth,
+or environment config included). It exists to make the RAG/LLM engineering
+easy to review without needing to clone or run the full product.
